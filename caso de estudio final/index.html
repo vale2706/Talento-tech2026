@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thesis Tool · Análisis de Literatura Médica</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #141720;
+    --bg3: #1c2030;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --muted: #7a8099;
+    --accent: #4f9cf9;
+    --accent2: #7b61ff;
+    --green: #3ecf8e;
+    --amber: #f5a623;
+    --red: #f06565;
+    --pill-bg: rgba(79,156,249,0.12);
+    --radius: 12px;
+    --radius-sm: 7px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .logo span { color: var(--accent); font-style: italic; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+    background: var(--bg3);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .tab {
+    padding: 7px 20px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s;
+    border: none;
+    background: none;
+  }
+
+  .tab.active {
+    background: var(--bg2);
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 50%;
+    margin-left: 6px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ---- PANELS ---- */
+  .panel { display: none; flex: 1; }
+  .panel.active { display: flex; flex-direction: column; flex: 1; }
+
+
+  /* ---- PROTOCOL ITEMS ---- */
+  .protocol-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: fadeIn .2s ease;
+  }
+  .protocol-num {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    flex-shrink: 0;
+  }
+  .protocol-input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: border-color .2s;
+  }
+  .protocol-input:focus { border-color: var(--accent); }
+  .protocol-input::placeholder { color: var(--muted); }
+  .protocol-remove {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all .15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .protocol-remove:hover { border-color: var(--red); color: var(--red); }
+
+  /* ---- CSV STATUS PILLS ---- */
+  .status-include { background: rgba(62,207,142,0.12); color: var(--green); border: 1px solid rgba(62,207,142,0.25); padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .status-exclude { background: rgba(240,101,101,0.12); color: var(--red); border: 1px solid rgba(240,101,101,0.25); padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .status-pending { background: rgba(245,166,35,0.12); color: var(--amber); border: 1px solid rgba(245,166,35,0.25); padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+
+  /* ---- UPLOAD ZONE ---- */
+  .upload-area {
+    padding: 40px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .drop-zone {
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius);
+    background: var(--bg2);
+    padding: 52px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(79,156,249,0.04);
+  }
+
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+
+  .drop-icon {
+    font-size: 40px;
+    margin-bottom: 14px;
+    display: block;
+    filter: grayscale(0.3);
+  }
+
+  .drop-zone h3 {
+    font-size: 16px; font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .drop-zone p {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ---- FILE LIST ---- */
+  .file-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .file-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: var(--text);
+    animation: fadeIn .2s ease;
+  }
+
+  .file-chip .remove {
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    transition: color .15s;
+    background: none; border: none;
+  }
+  .file-chip .remove:hover { color: var(--red); }
+
+  /* ---- BUTTONS ---- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 24px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all .18s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #3a87e8; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+  .btn-ghost {
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-green {
+    background: rgba(62,207,142,0.12);
+    color: var(--green);
+    border: 1px solid rgba(62,207,142,0.25);
+  }
+  .btn-green:hover { background: rgba(62,207,142,0.2); }
+
+  /* ---- SECTION ACTIONS ---- */
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* ---- RESULTS TABLE ---- */
+  .results-section {
+    padding: 0 32px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .results-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--text);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg2);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+    white-space: nowrap;
+    font-family: 'DM Mono', monospace;
+  }
+
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+    color: var(--text);
+    max-width: 240px;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .nivel-pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .nivel-I { background: rgba(62,207,142,0.15); color: var(--green); }
+  .nivel-II { background: rgba(79,156,249,0.15); color: var(--accent); }
+  .nivel-III { background: rgba(123,97,255,0.15); color: var(--accent2); }
+  .nivel-IV { background: rgba(245,166,35,0.15); color: var(--amber); }
+  .nivel-V { background: rgba(240,101,101,0.15); color: var(--red); }
+
+  /* ---- ERROR CARD ---- */
+  .error-card {
+    padding: 12px 16px;
+    background: rgba(240,101,101,0.08);
+    border: 1px solid rgba(240,101,101,0.2);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--red);
+  }
+
+  /* ---- CHAT ---- */
+  .chat-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - 65px);
+  }
+
+  .chat-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .sidebar-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+
+  .doc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: var(--text);
+    animation: fadeIn .2s;
+  }
+
+  .doc-icon { font-size: 16px; flex-shrink: 0; }
+
+  .doc-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+
+  .doc-status {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+
+  .no-docs-msg {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.6;
+    padding: 12px;
+    background: var(--bg3);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  /* ---- CHAT MAIN ---- */
+  .chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .msg {
+    display: flex;
+    gap: 14px;
+    animation: fadeIn .25s ease;
+    max-width: 820px;
+  }
+
+  .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .msg.user .avatar {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .msg.assistant .avatar {
+    background: rgba(123,97,255,0.2);
+    border: 1px solid rgba(123,97,255,0.3);
+  }
+
+  .bubble {
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: 680px;
+  }
+
+  .msg.user .bubble {
+    background: var(--accent);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg.assistant .bubble {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+    white-space: pre-wrap;
+  }
+
+  /* ---- CHAT INPUT ---- */
+  .chat-input-area {
+    padding: 20px 32px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 13px 18px;
+    font-size: 14px;
+    font-family: 'Outfit', sans-serif;
+    color: var(--text);
+    resize: none;
+    min-height: 50px;
+    max-height: 160px;
+    transition: border-color .2s;
+    outline: none;
+  }
+
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-input::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 50px; height: 50px;
+    border-radius: 12px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .18s;
+    flex-shrink: 0;
+  }
+
+  .send-btn:hover { background: #3a87e8; transform: translateY(-1px); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .send-btn svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---- TYPING INDICATOR ---- */
+  .typing {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 14px 18px;
+  }
+
+  .typing span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: bounce 1.2s infinite;
+  }
+
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+
+  /* ---- LOADING SPINNER ---- */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: inline-block;
+  }
+
+  /* ---- PROGRESS BAR ---- */
+  .progress-wrap {
+    background: var(--bg3);
+    border-radius: 6px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .4s ease;
+    border-radius: 6px;
+  }
+
+  /* ---- ANIMATIONS ---- */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-6px); }
+  }
+
+  /* ---- UTILITIES ---- */
+  .empty-state {
+    text-align: center;
+    padding: 80px 32px;
+    color: var(--muted);
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; display: block; }
+  .empty-state p { font-size: 14px; line-height: 1.6; max-width: 360px; margin: 0 auto; }
+
+  .hint-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .hint-chip {
+    padding: 8px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    font-size: 12.5px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .hint-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    background: var(--pill-bg);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Thesis<span>Tool</span></div>
+  <div style="font-size:12px; color:var(--muted); font-family:'DM Mono',monospace;">literatura médica · IA</div>
+  <div class="tabs" style="margin-left:auto">
+    <button class="tab" onclick="switchTab('protocol')" id="tab-protocol">🗂 Protocolo</button>
+    <button class="tab active" onclick="switchTab('extract')">📋 Extracción</button>
+    <button class="tab" onclick="switchTab('analysis')" id="tab-analysis">📊 Análisis CSV</button>
+    <button class="tab" onclick="switchTab('chat')" id="tab-chat">
+      💬 Chat
+      <span class="badge" id="doc-count-badge" style="display:none">0</span>
+    </button>
+  </div>
+</header>
+
+<!-- ===== PANEL PROTOCOLO ===== -->
+<div class="panel" id="panel-protocol">
+  <div style="padding:40px 32px;max-width:860px;display:flex;flex-direction:column;gap:24px">
+
+    <div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px">Protocolo de revisión sistemática</h2>
+      <p style="font-size:13px;color:var(--muted)">Define el marco de tu revisión. Esta información se inyecta automáticamente como contexto en cada consulta del chat.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Preguntas de investigación -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:2px">Preguntas de investigación</div>
+          <div style="font-size:12px;color:var(--muted)">Formato recomendado: PICO (Población · Intervención · Comparación · Outcome)</div>
+        </div>
+        <button class="btn btn-ghost" style="padding:6px 14px;font-size:12px;flex-shrink:0" onclick="addItem('questions-list','pregunta')">+ Agregar</button>
+      </div>
+      <div id="questions-list" style="display:flex;flex-direction:column;gap:8px">
+        <div class="protocol-item">
+          <span class="protocol-num" style="background:rgba(79,156,249,0.15);color:var(--accent)">P1</span>
+          <input type="text" class="protocol-input" placeholder="Ej: ¿Cuál es la efectividad de los modelos de IA basados en ECG para predecir eventos cardiovasculares en pacientes adultos?" oninput="updateProtocolPreview()">
+          <button class="protocol-remove" onclick="removeItem(this)">×</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Criterios de inclusión -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:14px;font-weight:500;color:var(--green);margin-bottom:2px">✓ Criterios de inclusión</div>
+          <div style="font-size:12px;color:var(--muted)">Estudios que SÍ deben incluirse en la revisión</div>
+        </div>
+        <button class="btn btn-ghost" style="padding:6px 14px;font-size:12px;flex-shrink:0" onclick="addItem('inclusion-list','criterio')">+ Agregar</button>
+      </div>
+      <div id="inclusion-list" style="display:flex;flex-direction:column;gap:8px">
+        <div class="protocol-item">
+          <span class="protocol-num" style="background:rgba(62,207,142,0.15);color:var(--green)">I1</span>
+          <input type="text" class="protocol-input" placeholder="Ej: Estudios publicados entre 2015-2025" oninput="updateProtocolPreview()">
+          <button class="protocol-remove" onclick="removeItem(this)">×</button>
+        </div>
+        <div class="protocol-item">
+          <span class="protocol-num" style="background:rgba(62,207,142,0.15);color:var(--green)">I2</span>
+          <input type="text" class="protocol-input" placeholder="Ej: Pacientes adultos (≥18 años)" oninput="updateProtocolPreview()">
+          <button class="protocol-remove" onclick="removeItem(this)">×</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Criterios de exclusión -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:14px;font-weight:500;color:var(--red);margin-bottom:2px">✗ Criterios de exclusión</div>
+          <div style="font-size:12px;color:var(--muted)">Estudios que NO deben incluirse en la revisión</div>
+        </div>
+        <button class="btn btn-ghost" style="padding:6px 14px;font-size:12px;flex-shrink:0" onclick="addItem('exclusion-list','criterio')">+ Agregar</button>
+      </div>
+      <div id="exclusion-list" style="display:flex;flex-direction:column;gap:8px">
+        <div class="protocol-item">
+          <span class="protocol-num" style="background:rgba(240,101,101,0.15);color:var(--red)">E1</span>
+          <input type="text" class="protocol-input" placeholder="Ej: Estudios con menos de 100 pacientes" oninput="updateProtocolPreview()">
+          <button class="protocol-remove" onclick="removeItem(this)">×</button>
+        </div>
+        <div class="protocol-item">
+          <span class="protocol-num" style="background:rgba(240,101,101,0.15);color:var(--red)">E2</span>
+          <input type="text" class="protocol-input" placeholder="Ej: Estudios sin validación externa" oninput="updateProtocolPreview()">
+          <button class="protocol-remove" onclick="removeItem(this)">×</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Notas adicionales -->
+    <div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:10px">Notas y contexto adicional</div>
+      <textarea id="protocol-notes" rows="3" placeholder="Ej: Revisión enfocada en modelos de deep learning aplicados a señales ECG para predicción de enfermedades cardiovasculares en el contexto de sistemas de salud latinoamericanos..."
+        style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:14px 16px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);resize:vertical;min-height:90px;outline:none;transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+        oninput="updateProtocolPreview()"></textarea>
+    </div>
+
+    <!-- Acciones -->
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span id="protocol-saved-msg" style="font-size:12px;color:var(--green);display:none">✓ Protocolo activo — se usa en cada consulta del chat</span>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button class="btn btn-ghost" onclick="clearProtocol()">🗑 Limpiar</button>
+        <button class="btn btn-primary" onclick="saveProtocol()">💾 Guardar y activar</button>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="protocol-preview-wrap" style="display:none">
+      <div class="divider"></div>
+      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Contexto que verá el modelo ↓</div>
+      <pre id="protocol-preview" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:11.5px;font-family:'DM Mono',monospace;color:var(--muted);white-space:pre-wrap;line-height:1.6;max-height:220px;overflow-y:auto"></pre>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== PANEL EXTRACCIÓN ===== -->
+<div class="panel active" id="panel-extract">
+  <div class="upload-area">
+
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept=".pdf" multiple>
+      <span class="drop-icon">🗂️</span>
+      <h3>Arrastra tus artículos en PDF aquí</h3>
+      <p>o haz clic para seleccionarlos · múltiples archivos</p>
+    </div>
+
+    <div id="file-list" class="file-list" style="display:none"></div>
+
+    <div id="progress-section" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:13px;color:var(--muted)" id="progress-label">Procesando...</span>
+        <span style="font-size:12px;color:var(--accent);font-family:'DM Mono',monospace" id="progress-text">0 / 0</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-extract" onclick="runExtraction()" disabled>
+        <span class="spinner" style="display:none" id="extract-spinner"></span>
+        <span id="extract-btn-text">⚡ Extraer información</span>
+      </button>
+      <span id="extract-status" style="font-size:12.5px;color:var(--muted)"></span>
+    </div>
+
+  </div>
+
+  <!-- Resultados -->
+  <div id="results-section" class="results-section" style="display:none">
+    <div class="divider"></div>
+    <div class="results-header">
+      <h2 class="results-title">Resultados</h2>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" onclick="sendToChat()" id="btn-send-chat">💬 Usar en chat</button>
+        <button class="btn btn-green" onclick="downloadCSV()" id="btn-csv">⬇ Exportar CSV</button>
+      </div>
+    </div>
+    <div id="error-list"></div>
+    <div class="table-wrap">
+      <table id="results-table">
+        <thead>
+          <tr>
+            <th>Archivo</th>
+            <th>Autores</th>
+            <th>Año</th>
+            <th>Revista</th>
+            <th>Diseño</th>
+            <th>Población</th>
+            <th>Desenlace</th>
+            <th>Resultados clave</th>
+            <th>Conclusión</th>
+            <th>Limitaciones</th>
+            <th>Nivel evidencia</th>
+            <th>Palabras clave</th>
+          </tr>
+        </thead>
+        <tbody id="results-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL ANÁLISIS CSV ===== -->
+<div class="panel" id="panel-analysis">
+  <div style="padding:40px 32px;display:flex;flex-direction:column;gap:24px">
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <h2 style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px">Análisis de CSV</h2>
+        <p style="font-size:13px;color:var(--muted)">Carga el CSV exportado de la extracción para filtrar, buscar y analizar título, abstract y autores.</p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <label class="btn btn-ghost" style="cursor:pointer">
+          📂 Cargar CSV
+          <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="loadCSV(this)">
+        </label>
+        <button class="btn btn-ghost" id="btn-apply-protocol" onclick="applyProtocolToCSV()" style="display:none">🗂 Aplicar protocolo</button>
+      </div>
+    </div>
+
+    <!-- Barra de búsqueda y filtros -->
+    <div id="csv-controls" style="display:none;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="csv-search" placeholder="Buscar en título, autores, abstract..."
+          style="flex:1;min-width:200px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 14px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);outline:none"
+          oninput="filterCSV()">
+        <select id="csv-filter-nivel" onchange="filterCSV()"
+          style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 14px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);outline:none">
+          <option value="">Todos los niveles</option>
+          <option value="I">Nivel I</option>
+          <option value="II">Nivel II</option>
+          <option value="III">Nivel III</option>
+          <option value="IV">Nivel IV</option>
+          <option value="V">Nivel V</option>
+        </select>
+        <select id="csv-filter-diseno" onchange="filterCSV()"
+          style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 14px;font-size:13px;font-family:'Outfit',sans-serif;color:var(--text);outline:none">
+          <option value="">Todos los diseños</option>
+        </select>
+        <button class="btn btn-ghost" style="padding:8px 14px;font-size:12px" onclick="resetCSVFilters()">↺ Limpiar filtros</button>
+      </div>
+
+      <!-- Stats rápidas -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="padding:8px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--muted)">
+          Total: <strong id="csv-total" style="color:var(--text)">0</strong>
+        </div>
+        <div style="padding:8px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--muted)">
+          Mostrando: <strong id="csv-showing" style="color:var(--accent)">0</strong>
+        </div>
+        <div id="protocol-match-info" style="padding:8px 16px;background:rgba(62,207,142,0.08);border:1px solid rgba(62,207,142,0.2);border-radius:var(--radius-sm);font-size:12px;color:var(--green);display:none">
+          ✓ Cumplen protocolo: <strong id="csv-protocol-count">0</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla CSV -->
+    <div id="csv-table-wrap" style="display:none">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:32px"></th>
+              <th onclick="sortCSV('titulo')" style="cursor:pointer">Título ↕</th>
+              <th onclick="sortCSV('autores')" style="cursor:pointer">Autores ↕</th>
+              <th onclick="sortCSV('anio')" style="cursor:pointer;white-space:nowrap">Año ↕</th>
+              <th>Revista</th>
+              <th>Diseño</th>
+              <th onclick="sortCSV('nivel_evidencia')" style="cursor:pointer;white-space:nowrap">Nivel ↕</th>
+              <th>Palabras clave</th>
+              <th style="width:80px">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="csv-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="csv-empty" class="empty-state">
+      <span class="icon">📊</span>
+      <p>Carga el CSV exportado desde la pestaña de Extracción para ver y analizar los artículos aquí.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== PANEL CHAT ===== -->
+<div class="panel" id="panel-chat">
+  <div class="chat-layout">
+
+    <!-- Sidebar con docs cargados -->
+    <div class="chat-sidebar">
+      <div class="sidebar-title">Artículos en contexto</div>
+      <div id="chat-doc-list">
+        <div class="no-docs-msg">
+          Carga PDFs en la pestaña de Extracción, luego haz clic en "Usar en chat".
+        </div>
+      </div>
+      <div id="protocol-sidebar-status" style="margin-top:8px;display:none;padding:10px 12px;background:rgba(79,156,249,0.07);border:1px solid rgba(79,156,249,0.2);border-radius:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Protocolo activo</div>
+        <div id="protocol-sidebar-detail" style="font-size:11.5px;color:var(--muted);line-height:1.5"></div>
+      </div>
+      <div style="margin-top:auto">
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;font-size:13px" onclick="clearChat()">🗑 Limpiar conversación</button>
+      </div>
+    </div>
+
+    <!-- Área de chat -->
+    <div class="chat-main">
+      <div class="chat-messages" id="chat-messages">
+        <div class="empty-state" id="chat-empty">
+          <span class="icon">🔬</span>
+          <p>Haz preguntas sobre tus artículos científicos. Puedo comparar estudios, resumir metodologías, identificar gaps en la literatura y más.</p>
+          <div class="hint-chips">
+            <div class="hint-chip" onclick="sendHint(this)">¿Cuál es el nivel de evidencia más alto?</div>
+            <div class="hint-chip" onclick="sendHint(this)">Compara las metodologías entre estudios</div>
+            <div class="hint-chip" onclick="sendHint(this)">¿Qué limitaciones son comunes?</div>
+            <div class="hint-chip" onclick="sendHint(this)">Resume los hallazgos principales</div>
+            <div class="hint-chip" onclick="sendHint(this)">¿Hay contradicciones entre los artículos?</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <div class="input-row">
+          <textarea class="chat-input" id="chat-input" placeholder="Pregunta algo sobre tus artículos..." rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let allFiles = [];      // File objects para extracción
+let extractedRows = []; // datos extraídos
+let chatDocs = [];      // {name, b64} para el chat
+let chatHistory = [];   // {role, content}
+
+// ===== TABS =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`#panel-${tab}`).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ===== FILE HANDLING =====
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  addFiles([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change', () => addFiles([...fileInput.files]));
+
+function addFiles(newFiles) {
+  const pdfs = newFiles.filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+  pdfs.forEach(f => {
+    if (!allFiles.find(x => x.name === f.name)) allFiles.push(f);
+  });
+  renderFileList();
+}
+
+function renderFileList() {
+  const list = document.getElementById('file-list');
+  const btn = document.getElementById('btn-extract');
+  if (!allFiles.length) { list.style.display = 'none'; btn.disabled = true; return; }
+  list.style.display = 'flex';
+  btn.disabled = false;
+  list.innerHTML = allFiles.map((f, i) => `
+    <div class="file-chip">
+      📄 <span>${f.name}</span>
+      <button class="remove" onclick="removeFile(${i})" title="Quitar">×</button>
+    </div>
+  `).join('');
+}
+
+function removeFile(i) {
+  allFiles.splice(i, 1);
+  renderFileList();
+}
+
+// ===== EXTRACTION =====
+async function runExtraction() {
+  if (!allFiles.length) return;
+  const btn = document.getElementById('btn-extract');
+  const spinner = document.getElementById('extract-spinner');
+  const btnText = document.getElementById('extract-btn-text');
+  const status = document.getElementById('extract-status');
+  const progSection = document.getElementById('progress-section');
+  const progBar = document.getElementById('progress-bar');
+  const progLabel = document.getElementById('progress-label');
+  const progText = document.getElementById('progress-text');
+
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+  btnText.textContent = 'Procesando...';
+  progSection.style.display = 'block';
+  status.textContent = '';
+  extractedRows = [];
+
+  // procesar de a 3 a la vez para no saturar
+  const BATCH = 3;
+  const total = allFiles.length;
+  let done = 0;
+
+  for (let i = 0; i < total; i += BATCH) {
+    const batch = allFiles.slice(i, i + BATCH);
+    const form = new FormData();
+    batch.forEach(f => form.append('pdfs', f));
+
+    progLabel.textContent = `Procesando ${Math.min(i + BATCH, total)} de ${total} artículos...`;
+    progText.textContent = `${done} / ${total}`;
+
+    try {
+      const res = await fetch('/extract', { method: 'POST', body: form });
+      const data = await res.json();
+
+      data.results.forEach(r => { if (r.ok) extractedRows.push(r.data); });
+      done += batch.length;
+      progBar.style.width = `${Math.round((done / total) * 100)}%`;
+      progText.textContent = `${done} / ${total}`;
+
+      if (data.errors?.length) {
+        data.errors.forEach(e => showError(`${e.filename}: ${e.error}`));
+      }
+    } catch (e) {
+      showError(`Error de red: ${e.message}`);
+    }
+  }
+
+  spinner.style.display = 'none';
+  btnText.textContent = '⚡ Extraer información';
+  btn.disabled = false;
+  progLabel.textContent = '✅ Extracción completa';
+
+  if (extractedRows.length) renderResults();
+}
+
+function showError(msg) {
+  const list = document.getElementById('error-list');
+  list.style.display = 'block';
+  list.innerHTML += `<div class="error-card">⚠ ${msg}</div>`;
+}
+
+function renderResults() {
+  document.getElementById('results-section').style.display = 'flex';
+  document.getElementById('error-list').innerHTML = '';
+  const tbody = document.getElementById('results-tbody');
+
+  tbody.innerHTML = extractedRows.map(r => {
+    const nivel = (r.nivel_evidencia || '').trim().charAt(0).toUpperCase();
+    const nivelClass = ['I','II','III','IV','V'].includes(nivel) ? `nivel-${nivel}` : '';
+    return `<tr>
+      <td><span class="tag">${escHtml(r._archivo || '')}</span></td>
+      <td>${escHtml(r.autores || '')}</td>
+      <td style="white-space:nowrap">${escHtml(r.anio || '')}</td>
+      <td style="font-style:italic">${escHtml(r.revista || '')}</td>
+      <td>${escHtml(r.diseno || '')}</td>
+      <td>${escHtml(r.poblacion || '')}</td>
+      <td>${escHtml(r.desenlace_principal || '')}</td>
+      <td>${escHtml(r.resultados_clave || '')}</td>
+      <td>${escHtml(r.conclusion || '')}</td>
+      <td>${escHtml(r.limitaciones || '')}</td>
+      <td><span class="nivel-pill ${nivelClass}">${escHtml(r.nivel_evidencia || '-')}</span></td>
+      <td>${escHtml(r.palabras_clave || '')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ===== CSV EXPORT =====
+async function downloadCSV() {
+  if (!extractedRows.length) return;
+  const res = await fetch('/export_csv', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({rows: extractedRows})
+  });
+  const {csv} = await res.json();
+  const blob = new Blob(['\uFEFF' + csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'tesis_articulos.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== SEND TO CHAT =====
+async function sendToChat() {
+  if (!allFiles.length) return;
+
+  const btn = document.getElementById('btn-send-chat');
+  btn.textContent = '⏳ Cargando docs...';
+  btn.disabled = true;
+
+  // 1. Limpiar caché del backend para esta nueva sesión
+  await fetch('/clear_cache', { method: 'POST' });
+
+  // 2. Subir todos los PDFs al backend via /preload (multipart, igual que extracción)
+  const form = new FormData();
+  for (const f of allFiles) form.append('pdfs', f);
+
+  let loadedNames = [];
+  try {
+    const res = await fetch('/preload', { method: 'POST', body: form });
+    const data = await res.json();
+    loadedNames = data.loaded || [];
+
+    if (data.errors && data.errors.length) {
+      console.warn('[preload] Errores:', data.errors);
+    }
+    console.log(`[preload] Backend cargó ${loadedNames.length} de ${allFiles.length} docs:`, loadedNames);
+  } catch (e) {
+    console.error('[preload] Error de red:', e);
+  }
+
+  // 3. Guardar en chatDocs solo los que el backend confirmó (para referencia local)
+  //    Ya NO necesitamos mandar base64 en cada mensaje — el backend tiene el texto en caché
+  chatDocs = loadedNames.map(name => ({ name, b64: null }));
+
+  // 4. Actualizar sidebar con estado de cada doc
+  const list = document.getElementById('chat-doc-list');
+  if (chatDocs.length === 0) {
+    list.innerHTML = '<div class="no-docs-msg">⚠ No se pudieron cargar documentos. Revisa los PDFs.</div>';
+  } else {
+    const allNames = allFiles.map(f => f.name);
+    list.innerHTML = allNames.map(name => {
+      const ok = loadedNames.includes(name);
+      return `<div class="doc-item">
+        <span class="doc-icon">📄</span>
+        <span class="doc-name" title="${name}">${name}</span>
+        <span class="doc-status" style="background:${ok ? 'var(--green)' : 'var(--red)'}" title="${ok ? 'Cargado' : 'Error al cargar'}"></span>
+      </div>`;
+    }).join('');
+  }
+
+  // 5. Actualizar badge
+  const badge = document.getElementById('doc-count-badge');
+  badge.textContent = chatDocs.length;
+  badge.style.display = chatDocs.length ? 'inline-flex' : 'none';
+
+  btn.textContent = '💬 Usar en chat';
+  btn.disabled = false;
+
+  // 6. Limpiar historial y cambiar tab
+  chatHistory = [];
+  document.getElementById('chat-messages').innerHTML = '';
+  document.getElementById('chat-empty').style.display = 'flex';
+  document.getElementById('chat-empty').style.flexDirection = 'column';
+  document.getElementById('chat-empty').style.alignItems = 'center';
+
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-chat').classList.add('active');
+  document.getElementById('tab-chat').classList.add('active');
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ===== CHAT =====
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+function sendHint(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  sendMessage();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const question = input.value.trim();
+  if (!question) return;
+
+  const sendBtn = document.getElementById('send-btn');
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  const empty = document.getElementById('chat-empty');
+  if (empty) empty.style.display = 'none';
+
+  appendMessage('user', question);
+  const typingId = appendTyping();
+
+  try {
+    // Los docs ya están en el caché del backend desde /preload
+    // Se incluye el protocolo como contexto adicional en cada mensaje
+    const body = {
+      question,
+      history: chatHistory,
+      docs: [],
+      protocol: getProtocolContext(),
+    };
+
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+    removeTyping(typingId);
+
+    const answer = data.answer || data.error || 'Sin respuesta';
+    appendMessage('assistant', answer);
+
+    chatHistory.push({role: 'user', content: question});
+    chatHistory.push({role: 'assistant', content: answer});
+
+  } catch (e) {
+    removeTyping(typingId);
+    appendMessage('assistant', `Error: ${e.message}`);
+  }
+
+  sendBtn.disabled = false;
+}
+
+function appendMessage(role, text) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const avatar = role === 'user' ? '👤' : '🔬';
+  div.innerHTML = `
+    <div class="avatar">${avatar}</div>
+    <div class="bubble">${escHtml(text)}</div>
+  `;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const msgs = document.getElementById('chat-messages');
+  const id = 'typing-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  div.id = id;
+  div.innerHTML = `<div class="avatar">🔬</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return id;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function clearChat() {
+  chatHistory = [];
+  document.getElementById('chat-messages').innerHTML = '';
+  const empty = document.getElementById('chat-empty');
+  if (empty) empty.style.display = 'flex';
+}
+
+// ===== PROTOCOLO =====
+let protocol = { questions: [], inclusion: [], exclusion: [], notes: '' };
+
+function getItemsFromList(listId) {
+  return [...document.querySelectorAll(`#${listId} .protocol-input`)]
+    .map(i => i.value.trim()).filter(Boolean);
+}
+
+function addItem(listId, type) {
+  const list = document.getElementById(listId);
+  const items = list.querySelectorAll('.protocol-item');
+  const n = items.length + 1;
+
+  let numStyle = '';
+  let prefix = '';
+  if (listId === 'questions-list') { numStyle = 'background:rgba(79,156,249,0.15);color:var(--accent)'; prefix = 'P'; }
+  else if (listId === 'inclusion-list') { numStyle = 'background:rgba(62,207,142,0.15);color:var(--green)'; prefix = 'I'; }
+  else { numStyle = 'background:rgba(240,101,101,0.15);color:var(--red)'; prefix = 'E'; }
+
+  const div = document.createElement('div');
+  div.className = 'protocol-item';
+  div.innerHTML = `
+    <span class="protocol-num" style="${numStyle}">${prefix}${n}</span>
+    <input type="text" class="protocol-input" placeholder="Escribe aquí..." oninput="updateProtocolPreview()">
+    <button class="protocol-remove" onclick="removeItem(this)">×</button>
+  `;
+  list.appendChild(div);
+  div.querySelector('input').focus();
+  renumberList(listId, prefix, numStyle);
+}
+
+function removeItem(btn) {
+  const item = btn.closest('.protocol-item');
+  const list = item.parentElement;
+  const listId = list.id;
+  const prefix = listId === 'questions-list' ? 'P' : listId === 'inclusion-list' ? 'I' : 'E';
+  const numStyle = listId === 'questions-list'
+    ? 'background:rgba(79,156,249,0.15);color:var(--accent)'
+    : listId === 'inclusion-list'
+      ? 'background:rgba(62,207,142,0.15);color:var(--green)'
+      : 'background:rgba(240,101,101,0.15);color:var(--red)';
+  item.remove();
+  renumberList(listId, prefix, numStyle);
+  updateProtocolPreview();
+}
+
+function renumberList(listId, prefix, numStyle) {
+  document.querySelectorAll(`#${listId} .protocol-num`).forEach((el, i) => {
+    el.textContent = `${prefix}${i + 1}`;
+    el.style.cssText = numStyle;
+  });
+}
+
+function buildProtocolText() {
+  const questions = getItemsFromList('questions-list');
+  const inclusion = getItemsFromList('inclusion-list');
+  const exclusion = getItemsFromList('exclusion-list');
+  const notes = document.getElementById('protocol-notes').value.trim();
+
+  const lines = ['=== PROTOCOLO DE REVISIÓN SISTEMÁTICA ==='];
+  if (questions.length) {
+    lines.push('PREGUNTAS DE INVESTIGACIÓN:');
+    questions.forEach((q, i) => lines.push(`  P${i+1}. ${q}`));
+    lines.push('');
+  }
+  if (inclusion.length) {
+    lines.push('CRITERIOS DE INCLUSIÓN:');
+    inclusion.forEach((c, i) => lines.push(`  I${i+1}. ${c}`));
+    lines.push('');
+  }
+  if (exclusion.length) {
+    lines.push('CRITERIOS DE EXCLUSIÓN:');
+    exclusion.forEach((c, i) => lines.push(`  E${i+1}. ${c}`));
+    lines.push('');
+  }
+  if (notes) {
+    lines.push('CONTEXTO ADICIONAL:');
+    lines.push(`  ${notes}`);
+    lines.push('');
+  }
+  lines.push('=== FIN PROTOCOLO ===');
+  return lines.join('\n');
+}
+
+function updateProtocolPreview() {
+  const text = buildProtocolText();
+  const wrap = document.getElementById('protocol-preview-wrap');
+  const pre = document.getElementById('protocol-preview');
+  const hasContent = getItemsFromList('questions-list').length ||
+    getItemsFromList('inclusion-list').length ||
+    getItemsFromList('exclusion-list').length ||
+    document.getElementById('protocol-notes').value.trim();
+  wrap.style.display = hasContent ? 'block' : 'none';
+  pre.textContent = text;
+}
+
+function saveProtocol() {
+  protocol.questions = getItemsFromList('questions-list');
+  protocol.inclusion = getItemsFromList('inclusion-list');
+  protocol.exclusion = getItemsFromList('exclusion-list');
+  protocol.notes = document.getElementById('protocol-notes').value.trim();
+
+  const msg = document.getElementById('protocol-saved-msg');
+  msg.style.display = 'inline';
+  setTimeout(() => msg.style.display = 'none', 3000);
+  updateProtocolPreview();
+  updateProtocolSidebar();
+}
+
+function updateProtocolSidebar() {
+  const status = document.getElementById('protocol-sidebar-status');
+  const detail = document.getElementById('protocol-sidebar-detail');
+  const hasProtocol = protocol.questions.length || protocol.inclusion.length || protocol.exclusion.length || protocol.notes;
+  if (!hasProtocol) { status.style.display = 'none'; return; }
+  status.style.display = 'block';
+  const lines = [];
+  if (protocol.questions.length) lines.push(`📌 ${protocol.questions.length} pregunta(s)`);
+  if (protocol.inclusion.length) lines.push(`✓ ${protocol.inclusion.length} criterio(s) inclusión`);
+  if (protocol.exclusion.length) lines.push(`✗ ${protocol.exclusion.length} criterio(s) exclusión`);
+  detail.textContent = lines.join(' · ');
+}
+
+function clearProtocol() {
+  if (!confirm('¿Limpiar todo el protocolo?')) return;
+  ['questions-list', 'inclusion-list', 'exclusion-list'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+  document.getElementById('protocol-notes').value = '';
+  protocol = { questions: [], inclusion: [], exclusion: [], notes: '' };
+  updateProtocolPreview();
+}
+
+function getProtocolContext() {
+  const q = protocol.questions;
+  const inc = protocol.inclusion;
+  const exc = protocol.exclusion;
+  const n = protocol.notes;
+  if (!q.length && !inc.length && !exc.length && !n) return '';
+  return buildProtocolText();
+}
+
+// ===== ANÁLISIS CSV =====
+let csvData = [];
+let csvFiltered = [];
+let csvSortCol = '';
+let csvSortAsc = true;
+
+function loadCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    parseCSV(text);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('');
+  if (lines.length < 2) return;
+  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = splitCSVLine(lines[i]);
+    if (vals.length < 2) continue;
+    const obj = {};
+    headers.forEach((h, j) => obj[h] = (vals[j] || '').replace(/^"|"$/g, '').trim());
+    obj._status = 'pending';
+    rows.push(obj);
+  }
+  csvData = rows;
+  csvFiltered = [...rows];
+
+  // Poblar filtro de diseño
+  const disenos = [...new Set(rows.map(r => r.diseno).filter(Boolean))];
+  const sel = document.getElementById('csv-filter-diseno');
+  sel.innerHTML = '<option value="">Todos los diseños</option>';
+  disenos.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
+
+  document.getElementById('csv-empty').style.display = 'none';
+  document.getElementById('csv-controls').style.display = 'flex';
+  document.getElementById('csv-table-wrap').style.display = 'block';
+  document.getElementById('btn-apply-protocol').style.display = 'inline-flex';
+  document.getElementById('csv-total').textContent = csvData.length;
+  renderCSVTable();
+}
+
+function splitCSVLine(line) {
+  const result = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { inQuotes = !inQuotes; continue; }
+    if (line[i] === ',' && !inQuotes) { result.push(cur); cur = ''; continue; }
+    cur += line[i];
+  }
+  result.push(cur);
+  return result;
+}
+
+function filterCSV() {
+  const q = document.getElementById('csv-search').value.toLowerCase();
+  const nivel = document.getElementById('csv-filter-nivel').value;
+  const diseno = document.getElementById('csv-filter-diseno').value;
+
+  csvFiltered = csvData.filter(r => {
+    const matchQ = !q || [r.titulo, r.autores, r.palabras_clave, r.revista, r.objetivo]
+      .some(f => (f||'').toLowerCase().includes(q));
+    const matchN = !nivel || (r.nivel_evidencia||'').startsWith(nivel);
+    const matchD = !diseno || r.diseno === diseno;
+    return matchQ && matchN && matchD;
+  });
+
+  renderCSVTable();
+}
+
+function resetCSVFilters() {
+  document.getElementById('csv-search').value = '';
+  document.getElementById('csv-filter-nivel').value = '';
+  document.getElementById('csv-filter-diseno').value = '';
+  csvFiltered = [...csvData];
+  renderCSVTable();
+}
+
+function sortCSV(col) {
+  if (csvSortCol === col) csvSortAsc = !csvSortAsc;
+  else { csvSortCol = col; csvSortAsc = true; }
+  csvFiltered.sort((a, b) => {
+    const av = (a[col]||'').toLowerCase();
+    const bv = (b[col]||'').toLowerCase();
+    return csvSortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+  renderCSVTable();
+}
+
+function setStatus(idx, status) {
+  const row = csvFiltered[idx];
+  if (!row) return;
+  const globalIdx = csvData.indexOf(row);
+  csvData[globalIdx]._status = status;
+  row._status = status;
+  renderCSVTable();
+}
+
+function renderCSVTable() {
+  const tbody = document.getElementById('csv-tbody');
+  document.getElementById('csv-showing').textContent = csvFiltered.length;
+
+  tbody.innerHTML = csvFiltered.map((r, i) => {
+    const nivel = (r.nivel_evidencia||'').trim().charAt(0).toUpperCase();
+    const nivelClass = ['I','II','III','IV','V'].includes(nivel) ? `nivel-${nivel}` : '';
+    const statusPill = r._status === 'include'
+      ? '<span class="status-include">✓ Incluir</span>'
+      : r._status === 'exclude'
+        ? '<span class="status-exclude">✗ Excluir</span>'
+        : '<span class="status-pending">? Pendiente</span>';
+
+    return `<tr>
+      <td style="text-align:center">
+        <input type="checkbox" style="accent-color:var(--accent);cursor:pointer"
+          ${r._selected ? 'checked' : ''}
+          onchange="csvFiltered[${i}]._selected = this.checked">
+      </td>
+      <td style="max-width:280px">
+        <div style="font-weight:500;font-size:13px;margin-bottom:3px">${escHtml(r.titulo||'—')}</div>
+        <div style="font-size:11px;color:var(--muted)">${escHtml(r.objetivo||'')}</div>
+      </td>
+      <td style="font-size:12px;white-space:nowrap">${escHtml(r.autores||'—')}</td>
+      <td style="white-space:nowrap;font-family:'DM Mono',monospace;font-size:12px">${escHtml(r.anio||'—')}</td>
+      <td style="font-size:12px;font-style:italic">${escHtml(r.revista||'—')}</td>
+      <td style="font-size:12px">${escHtml(r.diseno||'—')}</td>
+      <td><span class="nivel-pill ${nivelClass}" style="font-size:10px">${escHtml(r.nivel_evidencia||'—')}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${escHtml(r.palabras_clave||'—')}</td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start">
+          ${statusPill}
+          <div style="display:flex;gap:4px;margin-top:2px">
+            <button onclick="setStatus(${i},'include')" title="Incluir"
+              style="font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid rgba(62,207,142,0.3);background:rgba(62,207,142,0.08);color:var(--green);cursor:pointer">✓</button>
+            <button onclick="setStatus(${i},'exclude')" title="Excluir"
+              style="font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid rgba(240,101,101,0.3);background:rgba(240,101,101,0.08);color:var(--red);cursor:pointer">✗</button>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function applyProtocolToCSV() {
+  saveProtocol();
+  const inc = protocol.inclusion;
+  const exc = protocol.exclusion;
+  if (!inc.length && !exc.length) {
+    alert('Define al menos un criterio de inclusión o exclusión en la pestaña Protocolo primero.');
+    return;
+  }
+
+  // Llamar al LLM para que evalúe cada artículo contra el protocolo
+  const protocolText = buildProtocolText();
+  let applied = 0;
+
+  const promises = csvData.map(async (row, i) => {
+    const abstract = `Título: ${row.titulo}
+Autores: ${row.autores}
+Diseño: ${row.diseno}
+Población: ${row.poblacion}
+Objetivo: ${row.objetivo}
+Resultados: ${row.resultados_clave}`;
+    try {
+      const res = await fetch('/apply_protocol', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ article: abstract, protocol: protocolText })
+      });
+      const data = await res.json();
+      csvData[i]._status = data.decision === 'include' ? 'include' : 'exclude';
+      csvData[i]._reason = data.reason || '';
+      applied++;
+      document.getElementById('protocol-match-info').style.display = 'flex';
+      document.getElementById('csv-protocol-count').textContent =
+        csvData.filter(r => r._status === 'include').length;
+    } catch(e) { console.error(e); }
+  });
+
+  Promise.all(promises).then(() => {
+    csvFiltered = [...csvData];
+    renderCSVTable();
+  });
+
+  filterCSV();
+}
+
+</script>
+</body>
+</html>
